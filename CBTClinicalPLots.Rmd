@@ -1,0 +1,341 @@
+---
+title: "CBTClinicalPLots"
+author: "Tess Attenborough"
+date: "24/04/2020"
+output: html_document
+---
+
+```{r}
+library("devtools")
+library("ggplot2")
+library("vegan")
+library("ineq")
+library("tidyverse")
+library("praise")
+library("scales")
+library("patchwork")
+```
+
+Importing data from the CBT metadata file
+```{r}
+statsSheetMarch <- read.csv(file = "TCR_statistics_April.csv") #import metadata for samples (samples that worked)
+clinical = subset(statsSheetMarch, subset=(statsSheetMarch$Patient.or.control =="Patient" & statsSheetMarch$CD4.count > 0.001))
+
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+
+```
+
+```{r}
+#########################################
+#
+good.shapes = c(65:82, 18, 20)
+p3 = ggplot(clinical, aes(x=Month.after.transplant, y=TRECs, colour=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "TRECs over time", x ="Month after transplant", y = "TRECs (per million cells)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(xlim = c(0.75, 12))  +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = loess, se = FALSE, color = "black")
+p3
+ggsave("TRECsVsMonsth.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+
+```{r}
+#########################################
+#trecs v shannon
+p1 = ggplot(clinical, aes(x=TRECs, y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Shannon entropy and TRECs", x ="TRECs (per million cells)", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+ scale_x_continuous(labels = comma)
+p1
+ggsave("ShannonVSTRECSS.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#trecs v gini
+p2 = ggplot(clinical, aes(x=TRECs, y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="TRECs", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+ scale_x_continuous(labels = comma)
+p2
+ggsave("GiniVSTRECSS.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+ p3/
+(p1 | p2 )+ 
+  plot_layout(guides = 'collect')
+
+ggsave("allTheTRECs.pdf", width = 45, height = 40, units = c('cm'))
+```
+
+
+
+```{r}
+#########################################
+#months v cd3
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=CD3.count, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "CD3 count", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("MONTHSvCD3.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#months v cd4
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=CD4.count, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "CD4 count", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("MONTHSvCD4.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#months v cd8
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=CD8.count, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "CD8 count", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("MONTHSvCD8.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#months v naive cd4
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=Naive.CD4.count, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "Naive CD4 count", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("MONTHSvNaiveCD4.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#months v naive cd8
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=Naive.CD8.count, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "Naive CD8 count", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("MONTHSvNaiveCD8.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+make a plot stacking up cd4, cd8 etc with div
+
+#C15856,#C36997,#8F8ECC,#79D469,#E2CF3B
+
+```{r}
+p = ggplot() + 
+  geom_line(data = clinical, aes(x = Month.after.transplant, y = CD4.count, color='#C36997'))  + 
+  geom_point(data = clinical, aes(x = Month.after.transplant, y = CD4.count, color='#C36997')) + 
+  geom_line(data = clinical, aes(x = Month.after.transplant, y = Naive.CD4.count, color='#8F8ECC'))  + 
+  geom_point(data = clinical, aes(x = Month.after.transplant, y = Naive.CD4.count, color='#8F8ECC')) +  
+  geom_line(data = clinical, aes(x = Month.after.transplant, y = CD8.count, color='#79D469'))  + 
+  geom_point(data = clinical, aes(x = Month.after.transplant, y = CD8.count, color='#79D469')) +
+  geom_line(data = clinical, aes(x = Month.after.transplant, y = Naive.CD8.count, color='#E2CF3B'))  + 
+  geom_point(data = clinical, aes(x = Month.after.transplant, y = Naive.CD8.count, color='#E2CF3B')) +
+
+
+scale_shape_manual(values=good.shapes[1:20]) + facet_wrap(facets = vars(Individual)) + scale_color_manual(values=c("#C36997","#8F8ECC","#79D469","#E2CF3B"), 
+                       name="T cell subset",
+                       breaks=c("#79D469", "#8F8ECC", "#C36997","#E2CF3B" ),
+                       labels=c("CD4 cells", "Naive CD4 cells", "CD8 cells", "Naive CD8 cells"))+ theme_bw()+
+   scale_x_continuous(breaks = integer_breaks())+
+  labs(x = "Month after transplant",
+         y = "CD4, naive CD4, CD8, and naive CD8 cells (*10^9)")
+p
+
+ggsave("clincalstogetherCds.pdf", width = 40, height = 30, units = c('cm'))
+
+
+```
+
+here i will trim so i use patients with only 3 or more data sets
+```{r}
+
+clinicalMore<- subset(clinical, clinical$Individual=="A" | clinical$Individual=="D" | clinical$Individual=="E" | clinical$Individual=="F" | clinical$Individual=="H" | clinical$Individual=="I" | clinical$Individual=="J" | clinical$Individual=="K" | clinical$Individual=="L" | clinical$Individual=="M" | clinical$Individual=="N" | clinical$Individual=="P")
+
+
+p = ggplot() + 
+  geom_line(data = clinicalMore, aes(x = Month.after.transplant, y = CD4.count, color='#C36997'),size = 1)  + 
+  geom_point(data = clinicalMore, aes(x = Month.after.transplant, y = CD4.count, color='#C36997'),size = 4) + 
+  geom_line(data = clinicalMore, aes(x = Month.after.transplant, y = Naive.CD4.count, color='#8F8ECC'),size = 1)  + 
+  geom_point(data = clinicalMore, aes(x = Month.after.transplant, y = Naive.CD4.count, color='#8F8ECC'),size = 4) +  
+  geom_line(data = clinicalMore, aes(x = Month.after.transplant, y = CD8.count, color='#79D469'),size = 1)  + 
+  geom_point(data = clinicalMore, aes(x = Month.after.transplant, y = CD8.count, color='#79D469'),size = 4) +
+  geom_line(data = clinicalMore, aes(x = Month.after.transplant, y = Naive.CD8.count, color='#E2CF3B'),size = 1)  + 
+  geom_point(data = clinicalMore, aes(x = Month.after.transplant, y = Naive.CD8.count, color='#E2CF3B'),size = 4) +
+scale_shape_manual(values=good.shapes[1:20]) + facet_wrap(facets = vars(Individual), ncol = 3) + scale_color_manual(values=c("#C36997","#8F8ECC","#79D469","#E2CF3B"), 
+                       name="T cell subset",
+                       breaks=c("#C36997", "#8F8ECC", "#79D469","#E2CF3B" ),
+                       labels=c("CD4 cells", "Naive CD4 cells", "CD8 cells", "Naive CD8 cells"))+ theme_bw()+
+   scale_x_continuous(breaks = integer_breaks())+
+  labs(x = "Month after transplant",
+         y = "CD4, naive CD4, CD8, and naive CD8 cells (*10^9/L)") + theme(
+    plot.title = element_text(color="black", size=28, face="bold"),
+    axis.title.x = element_text(color="black", size=28, face="bold"),
+    axis.title.y = element_text(color="black", size=28, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+
+    theme(
+      strip.text.x = element_text(
+        size = 22))
+p
+
+ggsave("clincalstogetherCds3.pdf", width = 40, height = 30, units = c('cm'))
+
+
+```
+
+```{r}
+#########################################
+#cd ratio to Shannon
+
+#clinical$CD.ratio <-as.numeric(as.character(clinical$CD.ratio))
+
+
+p1 = ggplot(clinical, aes(x=CD.ratio, y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="CD4:CD8 ratio", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+p1
+ggsave("CDratioVshannon.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+```{r}
+#########################################
+#cd ratio to gini
+
+#clinical$CD.ratio <-as.numeric(as.character(clinical$CD.ratio))
+
+
+p1 = ggplot(clinical, aes(x=CD.ratio, y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="CD4:CD8 ratio", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) + geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+p1
+ggsave("CDratioVgini.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+
+```{r}
+#########################################
+#time vs cd4
+p1 = ggplot(clinical, aes(x=Month.after.transplant, y=CD.ratio, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after tranplant", y = "CD4:CD8 ratio", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma)  +geom_smooth(aes( group = 1 ), method = lm, se = TRUE, color = "black")+
+  geom_segment(aes(x=0,xend=12,y=1,yend=1),color="black")+
+   scale_x_continuous(breaks = integer_breaks())
+p1
+ggsave("CDratioVtime.pdf", width = 35, height = 20, units = c('cm'))
+```
+
+
+```{r}
+#########################################
+#ratio vs age
+p1 = ggplot(clinical_by_age, aes(x=Month, y=Ratio, color=Code, fill=Code, shape = Code)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "CD4:CD8 ratio", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma)  +geom_smooth(aes( group = 1 ), method = lm, se = FALSE, color = "black")+ geom_hline(yintercept=1)+
+   scale_x_continuous(breaks = integer_breaks())+ facet_wrap(~ Age, ncol=3)
+p1
+ggsave("CDratioVage.pdf", width = 35, height = 40, units = c('cm'))
+```
+
+
+
+

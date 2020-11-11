@@ -1,0 +1,224 @@
+---
+title: '2020'
+author: "Tess Attenborough"
+date: "14/08/2020"
+output: html_document
+---
+
+```{r}
+library("ape")
+library("ggplot2")
+library("plyr")
+library("scales")
+library("vegan")
+library("knitr")
+library("dplyr")
+library("praise")
+library("tidyverse")
+library("phyloseq")
+library("Bios2cor")
+library("grid")
+library("ggpubr")
+library("patchwork")
+library('ghibli')
+library("dplyr")
+```
+
+
+```{r}
+tcrstats_AUG2020 <- read.csv(file = "TCR_statistics_AUG2020.csv", stringsAsFactors = FALSE)
+
+
+#########################################
+#subset data with lab and clinical info
+clinical = subset(tcrstats_AUG2020, subset=(tcrstats_AUG2020$Patient.or.control =="Patient" & tcrstats_AUG2020$CD4.count > 0.01))
+#clinical = subset(tcrstats_new, subset=(tcrstats_new$Patient.or.control =="Patient" & tcrstats_new$CD4.count > 0.01 & tcrstats_new$Sample.ID != "D6CD4-a" & tcrstats_new$Sample.ID != "D6CD4-b"))
+clinical$Month.after.transplant3 <- factor(clinical$Month.after.transplant, levels = c("1", "2", "3", "6", "12"))
+
+#########################################
+
+############################################
+alphaclinical = subset(clinical, subset=(clinical$Chain=="alpha"))
+betaclinical = subset(clinical, subset=(clinical$Chain=="beta"))
+
+#########################################
+
+alpha <- subset(tcrstats_AUG2020, subset=(tcrstats_AUG2020$Chain=="alpha"))
+beta <- subset(tcrstats_AUG2020, subset=(tcrstats_AUG2020$Chain=="beta"))
+
+noUCBs <- subset(tcrstats_AUG2020, subset=(tcrstats_AUG2020$Month.after.transplant !="UCB"))
+noUCBalpha <- subset(noUCBs, subset=(noUCBs$Chain=="alpha"))
+noUCBbeta <- subset(noUCBs, subset=(noUCBs$Chain=="beta"))
+```
+
+```{r}
+#########################################
+
+#TCD4 count over time
+p1 = ggplot(clinical, aes(x=clinical$Month.after.transplant3, y=clinical$CD4.count, color=clinical$Individual, fill=clinical$Individual, shape = Individual)) +
+  geom_point(size=10) + labs(title = "CD4+ T cell count by month", x = "Month after transplant", y = "CD4 count (*10^9/L)", color = "Patient") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE)+ geom_boxplot(data = p1$data, aes(x = Month.after.transplant3, y = CD4.count, color = NULL, group = Month.after.transplant3), 
+  alpha = 0.1) + guides(fill=FALSE, group = FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20]) 
+
+ggsave("CD4andMonths.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+```
+
+
+```{r}
+
+#########################################
+good.shapes = c(65:82, 18, 20)
+#shannon vs cd4 count by month
+p1 = ggplot(clinical, aes(x=clinical$CD4.count, y=clinical$Shannon.entropy, color=clinical$Month.after.transplant3, fill=clinical$Month.after.transplant3, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Shannon entropy and CD4 count by month", x = "CD4 count (*10^9/L)", y = "Shannon entropy", color = "Month \nafter \ntransplant") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+p1
+ggsave("CD4vsShannonMonths.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+#########################################
+
+#shannon vs cd4 count by month
+p2 = ggplot(clinical, aes(x=clinical$CD4.count, y=clinical$Shannon.entropy, color=clinical$Individual, fill=clinical$Individual, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Shannon entropy and CD4 count by individual", x = "CD4 count (*10^9/L)", y = "Shannon entropy", color = "Patient") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+
+ggsave("CD4vsShannonPatient.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+
+#########################################
+
+#gini vs cd4 count by patient
+p3 = ggplot(clinical, aes(x=clinical$CD4.count, y=clinical$Gini.coefficient, color=clinical$Individual, fill=clinical$Individual, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Gini coefficient and CD4 count by individual", x = "CD4 count (*10^9/L)", y = "Gini coefficient", color = "Patient") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+p3
+ggsave("CD4vsGiniPatient.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+#########################################
+
+#gini vs cd4 count by month
+p4 = ggplot(clinical, aes(x=clinical$CD4.count, y=clinical$Gini.coefficient, color=clinical$Month.after.transplant3, fill=clinical$Month.after.transplant3, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Gini coefficient and CD4 count by month", x = "CD4 count (*10^9/L)", y = "Gini coefficient", color = "Month \nafter \ntransplant") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = loess, se = TRUE, color = "black")
+
+ggsave("CD4vsGiniMonth.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+
+p1 + p3+ p2 + p4 +
+  plot_layout(guides = 'collect')
+ggsave("ShannonAndGigivCD4.pdf", width = 65, height = 45, units = c('cm'))
+```
+
+```{r}
+#########################################
+spectra_clinical = clinical %>% drop_na(Spectratyping)
+
+#gini  vs spectratyping
+ggplot(spectra_clinical, aes(x=Month.after.transplant3, y=Gini.coefficient, color=Spectratyping, fill=Spectratyping)) +
+  geom_point(size=12, position ="jitter") + labs(title = "", x = "Month after transplant", y = "Gini coefficient", color = "Spectratyping result") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(angle = 90, hjust = 0.5,size=22)) + guides(fill=FALSE)+   scale_color_manual(labels = c("Abnormal", "Almost normal", "Normal"), values = c('#B50A2A', '#7EBAC2', '#0E84B4'))
+
+ggsave("GinivsSpectra.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+
+#########################################
+
+#shannon  vs spectratyping
+ggplot(spectra_clinical, aes(x=Month.after.transplant3, y=Shannon.entropy, color=Spectratyping, fill=Spectratyping)) +
+  geom_point(size=12, position ="jitter") + labs(title = "", x = "Month after transplant", y = "Shannon entropy", color = "Spectratyping result") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(angle = 90, hjust = 0.5,size=22)) + guides(fill=FALSE)+   scale_color_manual(labels = c("Abnormal", "Almost normal", "Normal"), values = c('#B50A2A', '#7EBAC2', '#0E84B4'))
+
+ggsave("ShannonvsSpectra.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+```
+
+
+```{r}
+#########################################
+
+#gini vs cd4 count by patient
+p3 = ggplot(clinical, aes(x=clinical$TRECs, y=clinical$Gini.coefficient, color=clinical$Individual, fill=clinical$Individual, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Gini coefficient and TRECs", x = "TRECs (per million cells)", y = "Gini coefficient", color = "Patient") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = lm, se = TRUE, color = "black")+ scale_x_continuous(labels = comma) 
+p3
+ggsave("TRECsvsGiniPatient.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+
+#########################################
+#shannon vs cd4 count by month
+p2 = ggplot(clinical, aes(x=clinical$TRECs, y=clinical$Shannon.entropy, color=clinical$Individual, fill=clinical$Individual, shape = Individual)) +
+  geom_point(size=10) + labs(title = "Shannon entropy and TRECs", x = "TRECs (per million cells)", y = "Shannon entropy", color = "Patient") + theme_bw() + theme(
+    plot.title = element_text(color="black", size=26, face="bold"),
+    axis.title.x = element_text(color="black", size=26, face="bold"),
+    axis.title.y = element_text(color="black", size=26, face="bold"),
+    axis.text=element_text(size=22),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape = FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_smooth(aes( group = 1 ), method = lm, se = TRUE, color = "black")+ scale_x_continuous(labels = comma) 
+
+ggsave("TRECsvsShannonPatient.pdf", width = 40, height = 30, units = c('cm'))
+############################################
+
+p3+ p2  +
+  plot_layout(guides = 'collect')
+ggsave("ShannonAndGigivTRECS.pdf", width = 65, height = 45, units = c('cm'))
+
+```
+
+
