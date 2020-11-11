@@ -1,0 +1,233 @@
+---
+title: "clinical by age"
+author: "Tess Attenborough"
+date: "04/06/2020"
+output: html_document
+---
+
+Here are the packages I need
+
+```{r packages}
+library("ape")
+library("ggplot2")
+library("plyr")
+library("scales")
+library("vegan")
+library("knitr")
+library("dplyr")
+library("praise")
+library("tidyverse")
+library("phyloseq")
+library("Bios2cor")
+library("grid")
+library("ggpubr")
+library("patchwork")
+library("varhandle")
+```
+
+Here I import the data file with the clinical values
+
+```{r data source}
+clinical_by_age <- read.csv(file = "Cell count by age.csv", stringsAsFactors = FALSE,check.names = F)
+
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+```
+
+Now I'm going to make plots so I can compare clinical cell countwith reference values. starting with cd3
+
+```{r  plot}
+#########################################
+#age vs cd3
+good.shapes = c(65:82, 18, 20)
+
+good.colours = c("#E9766C","#EA7583","#E5799B","#D781B1","#C28CC3","#A697CF","#85A1D5","#5FAAD3","#36B2CA","#04B7BB","#0EBBA7","#38BC8F","#5ABC78","#7ABB61","#98B74E","#B5B242","#D0AB3F","#E8A247","#FD9957")
+
+clinical_by_age.no.missing <- subset(clinical_by_age, !is.na(`CD3 Count`))
+p1 = ggplot(clinical_by_age.no.missing, aes(x=Age_at_sample, y=`CD3 Count`, colour=Code, fill=Code, shape = Code)) +
+  geom_point(size=3) + labs(title = "CD3  count", x ="Age (years)", y = "CD3 count (*10^9/L)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ scale_color_manual(values=good.colours[1:18])+
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) +geom_line(aes(group = Code)) +
+  geom_segment(aes(x=0,xend=2.99,y=3.58,yend=3.58),color="black")+
+  geom_segment(aes(x=0,xend=2.99,y=1.85,yend=1.85),color="black",linetype = "dashed")+
+  geom_segment(aes(x=0,xend=2.99,y=5.96,yend=5.96),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=2.36,yend=2.36),color="black")+
+  geom_segment(aes(x=3,xend=4.99,y=1.5,yend=1.5),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=3.87,yend=3.87),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=1.92,yend=1.92),color="black")+
+  geom_segment(aes(x=5,xend=6.99,y=1.42,yend=1.42),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=3.12,yend=3.12),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=1.88,yend=1.88),color="black")+
+  geom_segment(aes(x=7,xend=8.99,y=1.36,yend=1.36),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=2.74,yend=2.74),color="black",linetype = "dashed")
+p1
+ggsave("CD3wRef.pdf", width = 35, height = 20, units = c('cm'))
+
+```
+
+
+```{r  plot}
+#########################################
+#age vs cd4
+good.shapes = c(65:82, 18, 20)
+good.colours = c("#E9766C","#EA7583","#E5799B","#D781B1","#C28CC3","#A697CF","#85A1D5","#5FAAD3","#36B2CA","#04B7BB","#0EBBA7","#38BC8F","#5ABC78","#7ABB61","#98B74E","#B5B242","#D0AB3F","#E8A247","#FD9957")
+
+
+clinical_by_age.no.missing <- subset(clinical_by_age, !is.na(`CD4 Count`))
+p2 = ggplot(clinical_by_age.no.missing, aes(x=Age_at_sample, y=`CD4 Count`, colour=Code, fill=Code, shape = Code)) +
+  geom_point(size=3) + labs(title = "CD4 count", x ="Age (years)", y = "CD4 count (*10^9/L)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ scale_color_manual(values=good.colours[1:18])+
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) +geom_line(aes(group = Code)) +
+  geom_segment(aes(x=0,xend=2.99,y=2.08,yend=2.08),color="black")+
+  geom_segment(aes(x=0,xend=2.99,y=1.14,yend=1.14),color="black",linetype = "dashed")+
+  geom_segment(aes(x=0,xend=2.99,y=3.8,yend=3.8),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=1.33,yend=1.33),color="black")+
+  geom_segment(aes(x=3,xend=4.99,y=0.88,yend=0.88),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=2.36,yend=2.36),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=1.12,yend=1.12),color="black")+
+  geom_segment(aes(x=5,xend=6.99,y=0.54,yend=0.54),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=1.84,yend=1.84),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=0.98,yend=0.98),color="black")+
+  geom_segment(aes(x=7,xend=8.99,y=0.66,yend=0.66),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=1.61,yend=1.61),color="black",linetype = "dashed")
+p2
+ggsave("CD4wRef.pdf", width = 35, height = 20, units = c('cm'))
+
+```
+
+```{r  plot}
+#########################################
+#age vs cd4 naive
+good.shapes = c(65:82, 18, 20)
+good.shapes = c(65, 66, 68:80,82)
+
+good.colours = c("#E9766C","#EA7583","#D781B1","#C28CC3","#A697CF","#85A1D5","#5FAAD3","#36B2CA","#04B7BB","#0EBBA7","#38BC8F","#5ABC78","#7ABB61","#98B74E","#B5B242","#D0AB3F","#FD9957")
+
+clinical_by_age.no.missing <- subset(clinical_by_age, !is.na(`Naive CD4 count`))
+p3 = ggplot(clinical_by_age.no.missing, aes(x=Age_at_sample, y=`Naive CD4 count`, colour=Code, fill=Code, shape = Code)) +
+  geom_point(size=3) + labs(title = "Naive CD4 count", x ="Age (years)", y = "Naive CD4 count (*10^9/L)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ scale_color_manual(values=good.colours[1:18])+
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) +geom_line(aes(group = Code)) +
+  geom_segment(aes(x=0,xend=2.99,y=1.43,yend=1.43),color="black")+
+  geom_segment(aes(x=0,xend=2.99,y=0.6,yend=0.6),color="black",linetype = "dashed")+
+  geom_segment(aes(x=0,xend=2.99,y=3,yend=3),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=0.81,yend=0.81),color="black")+
+  geom_segment(aes(x=3,xend=4.99,y=0.5,yend=0.5),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=1.6,yend=1.6),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=0.63,yend=0.63),color="black")+
+  geom_segment(aes(x=5,xend=6.99,y=0.2,yend=0.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=1.2,yend=1.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=0.48,yend=0.48),color="black")+
+  geom_segment(aes(x=7,xend=8.99,y=0.2,yend=0.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=1,yend=1),color="black",linetype = "dashed")
+p3
+ggsave("CD4naivewRef.pdf", width = 35, height = 20, units = c('cm'))
+
+```
+
+```{r  plot}
+#########################################
+#age vs cd8
+good.shapes = c(65:82, 18, 20)
+good.colours = c("#E9766C","#EA7583","#E5799B","#D781B1","#C28CC3","#A697CF","#85A1D5","#5FAAD3","#36B2CA","#04B7BB","#0EBBA7","#38BC8F","#5ABC78","#7ABB61","#98B74E","#B5B242","#D0AB3F","#E8A247","#FD9957")
+
+clinical_by_age.no.missing <- subset(clinical_by_age, !is.na(`CD8 Count`))
+p4 = ggplot(clinical_by_age.no.missing, aes(x=Age_at_sample, y=`CD8 Count`, colour=Code, fill=Code, shape = Code)) +
+  geom_point(size=3) + labs(title = "CD8 count", x ="Age (years)", y = "CD8 count (*10^9/L)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ scale_color_manual(values=good.colours[1:18])+
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) +geom_line(aes(group = Code)) +
+  geom_segment(aes(x=0,xend=2.99,y=1.02,yend=1.02),color="black")+
+  geom_segment(aes(x=0,xend=2.99,y=0.54,yend=0.54),color="black",linetype = "dashed")+
+  geom_segment(aes(x=0,xend=2.99,y=1.97,yend=1.97),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=0.76,yend=0.76),color="black")+
+  geom_segment(aes(x=3,xend=4.99,y=0.41,yend=0.41),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=1.28,yend=1.28),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=0.58,yend=0.58),color="black")+
+  geom_segment(aes(x=5,xend=6.99,y=0.47,yend=0.47),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=1.2,yend=1.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=0.65,yend=0.65),color="black")+
+  geom_segment(aes(x=7,xend=8.99,y=0.44,yend=0.44),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=1.05,yend=1.05),color="black",linetype = "dashed")
+p4
+ggsave("CD8wRef.pdf", width = 35, height = 20, units = c('cm'))
+
+```
+
+```{r  plot}
+#########################################
+#age vs cd8 naive
+good.shapes = c(65:82, 18, 20)
+good.shapes = c(65, 66, 68:78, 80,82)
+
+good.colours = c("#E9766C","#EA7583","#D781B1","#C28CC3","#A697CF","#85A1D5","#5FAAD3","#36B2CA","#04B7BB","#0EBBA7","#38BC8F","#5ABC78","#7ABB61","#98B74E","#D0AB3F","#FD9957")
+
+clinical_by_age.no.missing <- subset(clinical_by_age, !is.na(`Naive CD8 count`))
+p5 = ggplot(clinical_by_age.no.missing, aes(x=Age_at_sample, y=`Naive CD8 count`, colour=Code, fill=Code, shape = Code)) +
+  geom_point(size=3) + labs(title = "Naive CD8 count", x ="Age (years)", y = "Naive CD8 count (*10^9/L)", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(breaks = integer_breaks())+ scale_color_manual(values=good.colours[1:18])+
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma) +geom_line(aes(group = Code)) +
+  geom_segment(aes(x=0,xend=2.99,y=0.53,yend=0.53),color="black")+
+  geom_segment(aes(x=0,xend=2.99,y=0.2,yend=0.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=0,xend=2.99,y=1.1,yend=1.1),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=0.37,yend=0.37),color="black")+
+  geom_segment(aes(x=3,xend=4.99,y=0.2,yend=0.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=3,xend=4.99,y=0.6,yend=0.6),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=0.29,yend=0.29),color="black")+
+  geom_segment(aes(x=5,xend=6.99,y=0.1,yend=0.1),color="black",linetype = "dashed")+
+  geom_segment(aes(x=5,xend=6.99,y=0.6,yend=0.6),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=0.26,yend=0.26),color="black")+
+  geom_segment(aes(x=7,xend=8.99,y=0.2,yend=0.2),color="black",linetype = "dashed")+
+  geom_segment(aes(x=7,xend=8.99,y=0.6,yend=0.6),color="black",linetype = "dashed")
+p5
+ggsave("CD8naivewRef.pdf", width = 35, height = 20, units = c('cm'))
+
+```
+
+```{r}
+p1 + p2+ p3 + p4 + p5 + 
+  plot_layout(guides = 'collect', ncol = 1)
+
+
+ggsave("allTheClinicalRef.pdf", width = 40, height = 50, units = c('cm'))
+```
