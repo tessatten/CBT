@@ -1,0 +1,65 @@
+---
+title: "Linear modelling CBT"
+author: "Tess Attenborough"
+date: "07/04/2020"
+output: html_document
+---
+
+```{r}
+library("ape")
+library("ggplot2")
+library("plyr")
+library("scales")
+library("vegan")
+library("knitr")
+library("dplyr")
+library("praise")
+library("tidyverse")
+library("phyloseq")
+library("Bios2cor")
+library("grid")
+library("ggpubr")
+library("devtools")
+library("nlcor")
+library('stringi')
+#install_github("ProcessMiner/nlcor")
+library("patchwork")
+library("e1071")
+library("broom")
+```
+
+
+testing out the minear modelling for number of reads vs number identified
+```{r}
+tcrstats_for_lm <- tcrstats_new_march %>% drop_na(Number.of.reads.raw)
+cor(tcrstats_for_lm$Number.of.reads.raw, tcrstats_for_lm$Number.of.VJ.rearrangements)
+
+linearMod <- lm(Number.of.VJ.rearrangements ~ Number.of.reads.raw, data=tcrstats_for_lm)  # build linear regression model on full data
+print(linearMod)
+summary(linearMod)
+
+broom::
+```
+
+```{r}
+summary(tcrstats_for_lm$Number.of.reads.raw)
+sd(tcrstats_for_lm$Number.of.reads.raw)
+```
+
+```{r}
+summary(tcrstats_for_lm$Number.of.VJ.rearrangements)
+sd(tcrstats_for_lm$Number.of.VJ.rearrangements)
+```
+
+```{r}
+summary(tcrstats_for_lm$Number.of.error.corrected.reads)
+sd(tcrstats_for_lm$Number.of.error.corrected.reads)
+```
+
+head(cars)
+```{r}
+head(cars)
+cor(cars$speed, cars$dist)
+linearMod <- lm(dist ~ speed, data=cars)  # build linear regression model on full data
+print(linearMod)
+```

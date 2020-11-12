@@ -1,0 +1,1494 @@
+---
+title: "Diversity and Clonotype plots individual"
+author: "Tess Attenborough"
+date: "16/04/2020"
+output: html_document
+---
+
+```{r}
+library("devtools")
+library("ggplot2")
+library("vegan")
+library("ineq")
+library("tidyverse")
+library("praise")
+library("scales")
+library("patchwork")
+
+integer_breaks <- function(n = 5, ...) {
+  fxn <- function(x) {
+    breaks <- floor(pretty(x, n, ...))
+    names(breaks) <- attr(breaks, "labels")
+    breaks
+  }
+  return(fxn)
+}
+```
+
+
+
+```{r}
+#diversity and clonotype plots for patient A
+
+A_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="A"))
+
+#gini
+p1 = ggplot(A_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_A_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(A_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_A_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+A_alpha_top_by_percent <- read.csv("A_alpha_top10_all.csv", stringsAsFactors = F, 
+                  header = TRUE)
+#a alpha top10
+p3 = ggplot(A_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_discrete( 
+                                           limits=c("1","2","3", "4", "5", "6","7", "8", "9", "10","11", "12"))
+p3
+ggsave("patient_A_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+A_beta_top_by_percent <- read.csv("A_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(A_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_discrete( 
+                                           limits=c("1","2","3", "4", "5", "6","7", "8", "9", "10","11", "12"))
+p4
+ggsave("patient_A_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_A_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient B
+
+B_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="B"))
+
+#gini
+p1 = ggplot(B_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_B_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(B_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_B_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+B_alpha_top_by_percent <- read.csv("B_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(B_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_discrete( 
+    limits=c("1","2"))
+p3
+ggsave("patient_B_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+B_beta_top_by_percent <- read.csv("B_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(B_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_discrete( 
+    limits=c("1","2"))
+p4
+ggsave("patient_B_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_B_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+
+```{r}
+#diversity and clonotype plots for patient C
+
+C_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="C"))
+
+#gini
+p1 = ggplot(C_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_C_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(C_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_C_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+C_alpha_top_by_percent <- read.csv("C_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+str(B_alpha_top_by_percent$Month)
+#a alpha top10
+p3 = ggplot(C_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_C_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+C_beta_top_by_percent <- read.csv("C_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(C_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_C_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_C_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+D_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="D"))
+
+#gini
+p1 = ggplot(D_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_D_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(D_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_D_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+D_alpha_top_by_percent <- read.csv("D_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(D_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_D_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+D_beta_top_by_percent <- read.csv("D_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(D_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_D_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_D_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+E_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="E"))
+
+#gini
+p1 = ggplot(E_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_E_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(E_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_E_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+E_alpha_top_by_percent <- read.csv("E_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(E_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_E_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+E_beta_top_by_percent <- read.csv("E_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(E_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_E_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_E_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+
+```{r}
+#diversity and clonotype plots for patient D
+
+F_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="F"))
+
+#gini
+p1 = ggplot(F_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_F_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(F_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_F_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+F_alpha_top_by_percent <- read.csv("F_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(F_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_F_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+F_beta_top_by_percent <- read.csv("F_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(F_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_F_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_F_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+G_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="G"))
+
+#gini
+p1 = ggplot(G_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_G_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(G_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_G_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+G_alpha_top_by_percent <- read.csv("G_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(G_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_G_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+G_beta_top_by_percent <- read.csv("G_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(G_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_G_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_G_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+H_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="H"))
+
+#gini
+p1 = ggplot(H_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_H_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(H_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_H_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+H_alpha_top_by_percent <- read.csv("H_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(H_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_H_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+H_beta_top_by_percent <- read.csv("H_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(H_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_H_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_H_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+I_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="I"))
+
+#gini
+p1 = ggplot(I_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_I_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(I_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_I_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+I_alpha_top_by_percent <- read.csv("I_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(I_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_I_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+I_beta_top_by_percent <- read.csv("I_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(I_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_I_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_I_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+J_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="J"))
+
+#gini
+p1 = ggplot(J_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_J_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(J_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_J_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+J_alpha_top_by_percent <- read.csv("J_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(J_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_J_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+J_beta_top_by_percent <- read.csv("J_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(J_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_J_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_J_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+K_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="K"))
+
+#gini
+p1 = ggplot(K_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_K_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(K_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_K_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+K_alpha_top_by_percent <- read.csv("K_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(K_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_K_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+K_beta_top_by_percent <- read.csv("K_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(K_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_K_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_K_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+L_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="L"))
+
+#gini
+p1 = ggplot(L_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_L_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(L_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_L_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+L_alpha_top_by_percent <- read.csv("L_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(L_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_L_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+L_beta_top_by_percent <- read.csv("L_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(L_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_L_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_L_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+M_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="M"))
+
+#gini
+p1 = ggplot(M_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_M_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(M_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_M_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+M_alpha_top_by_percent <- read.csv("M_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(M_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_M_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+M_beta_top_by_percent <- read.csv("M_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(M_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_M_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_M_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+N_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="N"))
+
+#gini
+p1 = ggplot(N_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_N_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(N_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_N_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+N_alpha_top_by_percent <- read.csv("N_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(N_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_N_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+N_beta_top_by_percent <- read.csv("N_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(N_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_N_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_N_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+O_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="O"))
+
+#gini
+p1 = ggplot(O_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_O_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(O_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_O_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+O_alpha_top_by_percent <- read.csv("O_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(O_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_O_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+O_beta_top_by_percent <- read.csv("O_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(O_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_O_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_O_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+P_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="P"))
+
+#gini
+p1 = ggplot(P_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_P_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(P_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_P_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+P_alpha_top_by_percent <- read.csv("P_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(P_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_P_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+P_beta_top_by_percent <- read.csv("P_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(P_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_P_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_P_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+Q_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="Q"))
+
+#gini
+p1 = ggplot(Q_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_Q_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(Q_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_Q_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+Q_alpha_top_by_percent <- read.csv("Q_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(Q_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_Q_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+Q_beta_top_by_percent <- read.csv("Q_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(Q_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_Q_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_Q_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+```{r}
+#diversity and clonotype plots for patient D
+
+R_info<- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Individual=="R"))
+
+#gini
+p1 = ggplot(R_info, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_R_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(R_info, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_R_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+R_alpha_top_by_percent <- read.csv("R_alpha_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p3 = ggplot(R_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_R_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+R_beta_top_by_percent <- read.csv("R_beta_top10_all.csv", stringsAsFactors = F, 
+                                   header = TRUE)
+#a alpha top10
+p4 = ggplot(R_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_R_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_R_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+

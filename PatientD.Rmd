@@ -1,0 +1,173 @@
+---
+title: "Patient D"
+author: "Tess Attenborough"
+date: "18/04/2020"
+output: html_document
+---
+
+```{r}
+library("ape")
+library("ggplot2")
+library("plyr")
+library("scales")
+library("vegan")
+library("knitr")
+library("dplyr")
+library("praise")
+library("tidyverse")
+library("phyloseq")
+library("Bios2cor")
+library("grid")
+library("ggpubr")
+library("patchwork")
+library("ineq")
+```
+
+in this file i will merge the cd4 and cd8 samples of patient D and plot them.
+
+```{r}
+AmAlF6_ALL_alpha_CDR3 <- rbind(AmAlF6_CD4_alpha_CDR3, AmAlF6_CD8_alpha_CDR3)
+
+AmAlF6_ALL_beta_CDR3 <- rbind(AmAlF6_CD4_beta_CDR3, AmAlF6_CD8_beta_CDR3)
+
+AmAlF8_ALL_alpha_CDR3 <- rbind(AmAlF8_CD4_alpha_CDR3, AmAlF8_CD8_alpha_CDR3)
+
+AmAlF8_ALL_beta_CDR3 <- rbind(AmAlF8_CD4_beta_CDR3, AmAlF8_CD8_beta_CDR3)
+
+
+AmAlF6_ALL_alpha_dcr_freq_genenames <- rbind(AmAlF6CD4_alpha_dcr_freq_genenames, AmAlF6CD8_alpha_dcr_freq_genenames)
+
+AmAlF6_ALL_beta_dcr_freq_genenames <- rbind(AmAlF6CD4_beta_dcr_freq_genenames, AmAlF6CD8_beta_dcr_freq_genenames)
+
+AmAlF8_ALL_alpha_dcr_freq_genenames <- rbind(AmAlF8CD4_alpha_dcr_freq_genenames, AmAlF8CD8_alpha_dcr_freq_genenames)
+
+AmAlF8_ALL_beta_dcr_freq_genenames <- rbind(AmAlF8CD4_beta_dcr_freq_genenames, AmAlF8CD8_beta_dcr_freq_genenames)
+
+```
+
+```{r}
+#chao1
+estimateR(AmAlF6_ALL_alpha_dcr_freq_genenames$"Number found in sample")
+estimateR(AmAlF6_ALL_beta_dcr_freq_genenames$"Number found in sample")
+estimateR(AmAlF8_ALL_alpha_dcr_freq_genenames$"Number found in sample")
+estimateR(AmAlF8_ALL_beta_dcr_freq_genenames$"Number found in sample")
+
+#shannon on dcr
+diversity(AmAlF6_ALL_alpha_dcr_freq_genenames$"Number found in sample", index = "shannon")
+diversity(AmAlF6_ALL_beta_dcr_freq_genenames$"Number found in sample", index = "shannon")
+
+diversity(AmAlF8_ALL_alpha_dcr_freq_genenames$"Number found in sample", index = "shannon")
+diversity(AmAlF8_ALL_beta_dcr_freq_genenames$"Number found in sample", index = "shannon")
+
+#shannon on cdr3
+diversity(AmAlF6_ALL_alpha_CDR3$"Number found in sample", index = "shannon")
+diversity(AmAlF6_ALL_beta_CDR3$"Number found in sample", index = "shannon")
+
+diversity(AmAlF8_ALL_alpha_CDR3$"Number found in sample", index = "shannon")
+diversity(AmAlF8_ALL_beta_CDR3$"Number found in sample", index = "shannon")
+
+#gini on dcr
+ineq(AmAlF6_ALL_alpha_dcr_freq_genenames$"Number found in sample",type="Gini")
+ineq(AmAlF6_ALL_beta_dcr_freq_genenames$"Number found in sample",type="Gini")
+
+ineq(AmAlF8_ALL_alpha_dcr_freq_genenames$"Number found in sample",type="Gini")
+ineq(AmAlF8_ALL_beta_dcr_freq_genenames$"Number found in sample",type="Gini")
+
+#gini on cdr3
+ineq(AmAlF6_ALL_alpha_CDR3$"Number found in sample",type="Gini")
+ineq(AmAlF6_ALL_beta_CDR3$"Number found in sample",type="Gini")
+
+ineq(AmAlF8_ALL_alpha_CDR3$"Number found in sample",type="Gini")
+ineq(AmAlF8_ALL_beta_CDR3$"Number found in sample",type="Gini")
+
+```
+
+Importing data from the CBT metadata file with D samples merged 
+```{r}
+statsSheetDcombined <- read.csv(file = "TCRstats_with_D_combined.csv") #import metadata for samples (samples that worked)
+
+```
+
+
+
+
+```{r}
+#diversity and clonotype plots for patient D
+
+D_info_comb<- subset(statsSheetDcombined, subset=(statsSheetDcombined$Individual=="D"))
+
+#gini
+p1 = ggplot(D_info_comb, aes(x=Month.after.transplant, y=Gini.coefficient, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Gini coefficient", x = "Month after transplant", y = "Gini coefficient", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#E77EA1", "#5FC27D")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )  +geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(0, 1))
+p1
+ggsave("patient_D_gini.pdf", width = 25, height = 20, units = c('cm'))
+
+#shannon
+p2 = ggplot(D_info_comb, aes(x=Month.after.transplant, y=Shannon.entropy, color=Chain, fill=Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  geom_line() + labs(title = "Shannon entropy", x = "Month after transplant", y = "Shannon index", color = "Chain") +
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#F0E442", "#56B4E9")) +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+geom_line(aes(group=Chain), size =2) + scale_x_continuous(breaks = integer_breaks())+ coord_cartesian(ylim = c(3, 12))
+p2
+ggsave("patient_D_shannon.pdf", width = 25, height = 20, units = c('cm'))
+
+#D_alpha_top_by_percent <- read.csv("D_alpha_top10_all.csv", stringsAsFactors = F,  header = TRUE)
+#a alpha top10
+p3 = ggplot(D_alpha_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (alpha chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p3
+ggsave("patient_D_alpha_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+#D_beta_top_by_percent <- read.csv("D_beta_top10_all.csv", stringsAsFactors = F,  header = TRUE)
+#a alpha top10
+p4 = ggplot(D_beta_top_by_percent, aes(x=Month, y=count.by.read, color=CDR3s, fill=CDR3s)) +
+  geom_point(size = 8)+ theme(legend.position="none")+
+  geom_line(aes(color = CDR3s), size = 2) + labs(title = "Top 10 CDR3s (beta chain)", x = "Month after transplant", y = "Clone size (% of all reads in sample)", color = "CDR3") +
+  theme_bw() + theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=24, face="bold"),
+    axis.title.y = element_text(color="black", size=24, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + guides(fill=FALSE, color = FALSE)+ scale_x_continuous(breaks = integer_breaks())
+p4
+ggsave("patient_D_beta_top10_percent.pdf", width = 32, height = 20, units = c('cm'))
+
+
+(p1 | p2 ) /
+  p3 /
+      p4
+ggsave("patient_D_all_the_diversities.pdf", width = 55, height = 70, units = c('cm'))
+
+```
+
+

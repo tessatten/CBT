@@ -1,0 +1,349 @@
+---
+title: "CBT plots for thesis"
+author: "Tess Attenborough"
+date: "03/04/2020"
+output: html_document
+---
+
+```{r}
+library("ape")
+library("ggplot2")
+library("plyr")
+library("scales")
+library("vegan")
+library("knitr")
+library("dplyr")
+library("praise")
+library("tidyverse")
+library("phyloseq")
+library("Bios2cor")
+library("grid")
+library("ggpubr")
+library("patchwork")
+```
+
+Importing data from the CBT metadata file
+```{r}
+statsSheetMarch <- read.csv(file = "TCR_statistics_April.csv") #import metadata for samples (samples that worked)
+
+```
+
+```{r}
+#clonotypes in CDR3 vs DCR
+p = ggplot(statsSheetMarch, aes(x=statsSheetMarch$Number.of.distinct.clonotypes, y=statsSheetMarch$Number.of.different.CDR3s, color=statsSheetMarch$Chain, fill=statsSheetMarch$Chain, shape = statsSheetMarch$Chain)) +
+  geom_point(size = 8) + theme(axis.title.x = element_text(size=5),
+                               axis.text.x  = element_text(angle=90, vjust=0.5, size=5)) + 
+  labs(title = "", x = "Number of different clonotypes (DCR)", y = "Number of different clonotypes (CDR3)", color = "Chain") +
+  theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=28, face="bold"),
+    axis.title.x = element_text(color="black", size=28, face="bold"),
+    axis.title.y = element_text(color="black", size=28, face="bold"),
+    axis.text=element_text(size=26),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  )+ scale_y_continuous(labels = comma)+ geom_smooth(method = "lm", se = FALSE) + guides(fill=FALSE, shape=FALSE)+
+  scale_color_manual(labels = c("Alpha", "Beta"), values = c("#56B4E9", "#D55E00"))+ scale_x_continuous(labels = comma)
+p
+ggsave("clonotypesinDCRvCDR3.pdf", width = 27, height = 20, units = c('cm'))
+
+```
+
+```{r}
+#removing samples with less that 1000 reads for div p[lots]
+TCR_statistics_no1000 <- read.csv(file = "TCR_statistics_no1000.csv")
+
+#doing a t test to see if population means are differnt
+alpha_TCR_statistics_no1000 <- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Chain=="alpha"))
+beta_TCR_statistics_no1000 <- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Chain=="beta"))
+
+```
+
+```{r}
+#########################################
+#time vs gini alpha
+good.shapes = c(65:82, 18, 20)
+p1 = ggplot(alpha_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Gini coefficient (alpha chain)", x ="Month after transplant", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])
+p1
+ggsave("TimeAndGiniAlpha.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs gini beta
+good.shapes = c(65:82, 18, 20)
+p2 = ggplot(beta_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Gini coefficient (beta chain)", x ="Month after transplant", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])
+p2
+ggsave("TimeAndGiniBeta.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs shannon alpha
+good.shapes = c(65:82, 18, 20)
+p3 = ggplot(alpha_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Shannon entropy (alpha chain)", x ="Month after transplant", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])
+p3
+ggsave("TimeAndShannonAlpha.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs shannon beta
+good.shapes = c(65:82, 18, 20)
+p4 = ggplot(beta_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Shannon entropy (beta chain)", x ="Month after transplant", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])
+p4
+ggsave("TimeAndShannonBeta.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs chao alpha
+good.shapes = c(65:82, 18, 20)
+p5 = ggplot(alpha_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Chao1, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Chao1 index (alpha chain)", x ="Month after transplant", y = "Chao1 index", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma)
+p5
+ggsave("TimeAndChao1Alpha.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs chao beta
+good.shapes = c(65:82, 18, 20)
+p6 = ggplot(beta_TCR_statistics_no1000, aes(x=Month.after.transplant, y=Chao1, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "Chao1 index (beta chain)", x ="Month after transplant", y = "Chao1 index", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE)  +geom_line(aes(group=Individual), size =1) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])+ scale_y_continuous(labels = comma)
+p6
+ggsave("TimeAndChao1Beta.pdf", width = 35, height = 20, units = c('cm'))
+############################################################
+```
+```{r}
+p1 + p2+ p3 + p4 + p5 + p6 + 
+  plot_layout(guides = 'collect', ncol = 2)
+
+
+ggsave("DivCBTAll.pdf", width = 40, height = 50, units = c('cm'))
+```
+
+
+```{r}
+#removing samples with less that 1000 reads for div p[lots]
+TCR_statistics_no1000 <- read.csv(file = "TCR_statistics_no1000.csv")
+
+#doing a t test to see if population means are differnt
+alpha_TCR_statistics_no1000 <- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Chain=="alpha"))
+beta_TCR_statistics_no1000 <- subset(TCR_statistics_no1000, subset=(TCR_statistics_no1000$Chain=="beta"))
+
+```
+
+```{r}
+#########################################
+#time vs gini alpha in bins
+
+
+good.shapes = c(65:82, 18, 20)
+p1 = ggplot(alpha_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Gini coefficient (alpha chain)", x ="Month after transplant (by bin)", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p1$data, aes(x = Sample.bin, y = Gini.coefficient, color = NULL, group = Sample.bin), 
+  alpha = 0.1)
+p1
+ggsave("TimeAndGiniAlphaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs gini beta bin
+good.shapes = c(65:82, 18, 20)
+p2 = ggplot(beta_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Gini.coefficient, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Gini coefficient (beta chain)", x ="Month after transplant (by bin)", y = "Gini coefficient", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p2$data, aes(x = Sample.bin, y = Gini.coefficient, color = NULL, group = Sample.bin), 
+  alpha = 0.1)
+p2
+ggsave("TimeAndGiniBetaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+
+```{r}
+#########################################
+#time vs Shannon alpha in bins
+
+good.shapes = c(65:82, 18, 20)
+p3 = ggplot(alpha_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Shannon entropy (alpha chain)", x ="Month after transplant (by bin)", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p3$data, aes(x = Sample.bin, y = Shannon.entropy, color = NULL, group = Sample.bin), 
+  alpha = 0.1)
+p3
+ggsave("TimeAndShannonAlphaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs Shannon beta bin
+good.shapes = c(65:82, 18, 20)
+p4 = ggplot(beta_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Shannon.entropy, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Shannon entropy (beta chain)", x ="Month after transplant (by bin)", y = "Shannon entropy", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p4$data, aes(x = Sample.bin, y = Shannon.entropy, color = NULL, group = Sample.bin), 
+  alpha = 0.1)
+p4
+ggsave("TimeAndShannonBetaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs Shannon alpha in bins
+
+good.shapes = c(65:82, 18, 20)
+p5 = ggplot(alpha_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Chao1, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Chao1 index (alpha chain)", x ="Month after transplant (by bin)", y = "Chao1 index", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p5$data, aes(x = Sample.bin, y = Chao1, color = NULL, group = Sample.bin), 
+  alpha = 0.1)+ scale_y_continuous(labels = comma)
+p5
+ggsave("TimeAndChaoAlphaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+#########################################
+#time vs Shannon beta bin
+good.shapes = c(65:82, 18, 20)
+p6 = ggplot(beta_TCR_statistics_no1000, aes(x=factor(Sample.bin), y=Chao1, color=Individual, fill=Individual, shape = Individual))+
+  geom_point(size=6) + labs(title = "Chao1 index (beta chain)", x ="Month after transplant (by bin)", y = "Chao1 index", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+    scale_shape_manual(values=good.shapes[1:20])+ geom_boxplot(data = p6$data, aes(x = Sample.bin, y = Chao1, color = NULL, group = Sample.bin), 
+  alpha = 0.1)+ scale_y_continuous(labels = comma)
+p6
+ggsave("TimeAndChaoBetaBin.pdf", width = 30, height = 20, units = c('cm'))
+############################################################
+```
+
+```{r}
+p1 + p2+ p3 + p4 + p5 + p6 + 
+  plot_layout(guides = 'collect', ncol = 2)
+
+
+ggsave("DivCBTAllBin.pdf", width = 40, height = 50, units = c('cm'))
+```
+
+```{r}
+#mean of 100 top clonptypes
+good.shapes = c(65:82, 18, 20)
+p = ggplot(TCR_statistics_no1000, aes(x=Month.after.transplant, y=Mean.abundance.of.top.100.clonotypes.CDR3, color=Individual, fill=Individual, shape = Individual)) +
+  geom_point(size=6) + labs(title = "", x ="Month after transplant", y = "Mean abundance of the top 100 clonotypes", color = "Individual") +   theme_bw() + guides(fill=FALSE)+ theme(
+    plot.title = element_text(color="black", size=24, face="bold"),
+    axis.title.x = element_text(color="black", size=20, face="bold"),
+    axis.title.y = element_text(color="black", size=20, face="bold"),
+    axis.text=element_text(size=20),
+    legend.title = element_text(color = "black", size = 26),
+    legend.text = element_text(color = "black", size = 24)
+  ) + theme(axis.text.x = element_text(hjust = 0.5,size=22)) + guides(fill=FALSE, shape=FALSE) +
+   scale_x_continuous(labels = comma)  +
+    scale_shape_manual(values=good.shapes[1:20])
+p
+ggsave("MeanAbundanceofTopAll.pdf", width = 30, height = 20, units = c('cm'))
+```
+
